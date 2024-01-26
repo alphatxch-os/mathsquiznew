@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace mathsquiznew
@@ -9,22 +10,26 @@ namespace mathsquiznew
         private Random random = new Random();
         private int num1, num2, answer, score;
         private string operatorSymbol;
-        private DispatcherTimer timer;
+        private DateTime endTime;
+        private DateTime startTime;
+        private DispatcherTimer questionTimer;
+        private DispatcherTimer continuousTimer;
 
         public MainWindow()
         {
             InitializeComponent();
             InitializeGame();
+            UpdateScore();
+            ScheduleQuestionGeneration();
+            SetupContinuousTimer();
+            startTime = DateTime.Now;  // Record the start time when the game begins
         }
 
         private void InitializeGame()
         {
-            timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(1);
-            timer.Tick += Timer_Tick;
-
             GenerateQuestion();
-            StartTimer();
+            endTime = DateTime.Now.AddSeconds(10);  // Set the initial end time for countdown
+            UpdateTimerText();
         }
 
         private void UpdateScore()
@@ -32,37 +37,41 @@ namespace mathsquiznew
             ScoreText.Text = $"Score: {score}";
         }
 
-
-        private void Timer_Tick(object sender, EventArgs e)
+        private void SetupContinuousTimer()
         {
-            if (timer != null && timer.IsEnabled)
+            continuousTimer = new DispatcherTimer();
+            continuousTimer.Interval = TimeSpan.FromSeconds(1);
+            continuousTimer.Tick += (sender, e) =>
             {
-                if (timer.Interval.TotalSeconds == 5)
-                {
-                    timer.Stop();
-                    // MessageBox.Show($"Time's up! The correct answer is {answer}. Your score remains {score}.", "Result");
-                    // commented out in case 
-                    //test 
-                    GenerateQuestion();
-                    StartTimer();
-                }
-                else
-                {
-                    timer.Interval = timer.Interval.Add(TimeSpan.FromSeconds(1));
-                }
-            }
+                UpdateTimerText();
+            };
+
+            continuousTimer.Start();
         }
 
-        private void StartTimer()
+        private void ScheduleQuestionGeneration()
         {
-            timer.Start();
-            timer.Interval = TimeSpan.FromSeconds(1);
+            questionTimer = new DispatcherTimer();
+            questionTimer.Interval = TimeSpan.FromSeconds(1);
+            questionTimer.Tick += (sender, e) =>
+            {
+                UpdateTimerText();  // Update the timer every second
+                if (DateTime.Now >= endTime)
+                {
+                    questionTimer.Stop();
+                    GenerateQuestion();
+                    endTime = DateTime.Now.AddSeconds(10);  // Set the new end time for the next countdown
+                    questionTimer.Start();
+                }
+            };
+
+            questionTimer.Start();
         }
 
         private void GenerateQuestion()
         {
-            num1 = random.Next(1, 11);
-            num2 = random.Next(1, 11);
+            num1 = random.Next(1, 13);  // Numbers up to 12 for multiplication
+            num2 = random.Next(1, 13);
 
             switch (random.Next(1, 5))
             {
@@ -79,7 +88,7 @@ namespace mathsquiznew
                     answer = num1 * num2;
                     break;
                 case 4:
-                    operatorSymbol = "/";
+                    operatorSymbol = "÷";
                     answer = num1 / num2;
                     break;
             }
@@ -88,29 +97,65 @@ namespace mathsquiznew
             AnswerInput.Text = "";
         }
 
-        private void Submit_Click(object sender, RoutedEventArgs e)
+
+        private void AnswerInput_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                SubmitAnswer();
+            }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SubmitAnswer()
         {
             if (int.TryParse(AnswerInput.Text, out int userAnswer))
             {
-                timer.Stop();
-
                 if (userAnswer == answer)
                 {
-                    MessageBox.Show($"Correct! Well done. Your score is now {++score}.", "Result");
+                    score++;  // Increment the score by 1
+                    UpdateScore();
+                    MessageBox.Show($"Correct! Well done. Your score is now {score}.", "Result");
+                    GenerateQuestion();  // Uncomment this line to generate a new question
+
+                    // Reset the timer
+                    endTime = DateTime.Now.AddSeconds(10);
+
+                    if (score >= 10)
+                    {
+                        EndGame();
+                        return;
+                    }
                 }
                 else
                 {
                     MessageBox.Show($"Incorrect. The correct answer is {answer}. Your score remains {score}.", "Result");
+                    GenerateQuestion();
                 }
-
-                GenerateQuestion();
-                StartTimer();
             }
             else
             {
                 MessageBox.Show("Please enter a valid number.", "Error");
             }
+        }
 
+
+
+        private void EndGame()
+        {
+            TimeSpan elapsedTime = DateTime.Now - startTime;  // Calculate elapsed time
+            MessageBox.Show($"Congratulations! You have reached 10 points.\nYour final score is {score}.\nElapsed Time: {elapsedTime:mm\\:ss}", "Game Over");
+            Close();
+        }
+
+        private void UpdateTimerText()
+        {
+            TimeSpan remainingTime = endTime - DateTime.Now;
+            TimerText.Text = $"Time: {remainingTime:mm\\:ss}";
         }
     }
 }
