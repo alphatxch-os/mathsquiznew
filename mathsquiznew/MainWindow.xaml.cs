@@ -149,7 +149,7 @@ namespace mathsquiznew
         {
             TimeSpan elapsedTime = DateTime.Now - startTime;  // Calculate elapsed time
             MessageBox.Show($"Congratulations! You have reached 10 points.\nYour final score is {score}.\nElapsed Time: {elapsedTime:mm\\:ss}", "Game Over");
-            Close();
+            Close(); // close the box 
         }
 
         private void UpdateTimerText()
