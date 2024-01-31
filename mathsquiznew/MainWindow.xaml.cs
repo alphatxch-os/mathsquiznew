@@ -47,7 +47,7 @@ namespace mathsquiznew
             };
 
             continuousTimer.Start();
-        }
+        } 
 
         private void ScheduleQuestionGeneration()
         {
@@ -117,7 +117,7 @@ namespace mathsquiznew
             {
                 if (userAnswer == answer)
                 {
-                    score++;  // Increment the score by 1
+                    score++;  // Increment the score by one
                     UpdateScore();
                     MessageBox.Show($"Correct! Well done. Your score is now {score}.", "Result");
                     GenerateQuestion();  // Uncomment this line to generate a new question
